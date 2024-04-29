@@ -1,0 +1,32 @@
+#!/bin/bash
+
+_RES=0
+declare -A duplicates
+
+check_unique_filenames() {
+
+    # Find all files matching the pattern in the specified directory tree
+    files=$(find "$GIT_PREFIX/testdir1/" -type f -name 'test_file_*' | xargs realpath)
+
+    # Loop through the files and check uniqueness of their filenames
+    for file in $files; do
+        filename=$(basename "$file")
+        if [[ $(grep -c ".*/$filename$" <<< "$files") -gt 1 ]]; then
+            if [[ -n "${duplicates["$filename"]}" ]]; then
+                (( duplicates["$filename"] += 1 ))
+            else
+                duplicates["$filename"]=1
+            fi
+            _RES=1
+        fi
+    done
+
+    if [ ${#duplicates[@]} -gt 0 ]; then
+        for duplicate in ${!duplicates[@]}; do
+            echo "Error: Duplicate filename found: '$duplicate'"
+        done
+    fi
+}
+
+check_unique_filenames
+exit $_RES
